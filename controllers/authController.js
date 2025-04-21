@@ -41,15 +41,40 @@ const loginUser = async(req, res) =>{
     
 };
 
-const updateUser = async(req, res) =>{
-    try{
-        const {name} = req.body;
-        const updateUser = await User.findByIdAndUpdate(req.user.id, {name}, {new:true});
-        res.json({message:"User updated successfully", updateUser});
-    }catch(error){
-        res.status(500).json({message:error.message});
+const updateUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        const updates = {};
+        if (name) updates.name = name;
+        if (email) updates.email = email;
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updates.password = hashedPassword;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            updates,
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            message: "User updated successfully",
+            updatedUser: {
+                id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-    
 };
 
 const deleteUser = async(req, res) =>{
